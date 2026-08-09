@@ -11,6 +11,8 @@ import re
 from pathlib import Path
 from typing import List, Dict
 
+from llm import embed, embedding_model, llm_enabled
+
 _VECTOR_DIM = 256
 _WORD_RE = re.compile(r"[a-z0-9]+")
 
@@ -34,6 +36,22 @@ class HashingEmbeddingFunction:
         return "hashing-bow-256"
 
 
+class OpenRouterEmbeddingFunction:
+    """Real embeddings via OpenRouter (/embeddings endpoint). Silently falls back to hashing per batch on any API failure."""
+
+    def __init__(self):
+        self._fallback = HashingEmbeddingFunction()
+
+    def __call__(self, input: List[str]) -> List[List[float]]:
+        try:
+            return embed(input)
+        except Exception:
+            return self._fallback(input)
+
+    def name(self) -> str:
+        return embedding_model
+
+
 class RAGAgent:
     """Agent responsible for knowledge base retrieval.
 
@@ -42,24 +60,34 @@ class RAGAgent:
     (distance = 1 - cosine similarity) so callers see the same shape as before.
     """
 
-    def __init__(self, knowledge_dir: str = None):
+    def __init__(self, knowledge_dir: str = None, embedding_function=None):
         base_dir = Path(__file__).resolve().parent.parent
         self.knowledge_dir = Path(knowledge_dir) if knowledge_dir else base_dir / "data" / "knowledge"
-        self.embedding_function = HashingEmbeddingFunction()
+        self.embedding_function = embedding_function or (
+            OpenRouterEmbeddingFunction() if llm_enabled() else HashingEmbeddingFunction()
+        )
         self._docs: List[Dict] = []
         self.load_documents()
 
     def load_documents(self):
-        """Chunk every knowledge .txt file and embed each chunk into the index."""
+        """Chunk every knowledge .txt file and embed all chunks in one batch (one API call when using real embeddings)."""
+        chunks: List[str] = []
+        ids, sources = [], []
         for file_path in sorted(self.knowledge_dir.glob("*.txt")):
             content = file_path.read_text()
             for i, chunk in enumerate(self._chunk_text(content, chunk_size=500, overlap=50)):
-                self._docs.append({
-                    "id": f"{file_path.stem}_{i}",
-                    "content": chunk,
-                    "source": file_path.name,
-                    "vector": self.embedding_function([chunk])[0],
-                })
+                chunks.append(chunk)
+                ids.append(f"{file_path.stem}_{i}")
+                sources.append(file_path.name)
+
+        vectors = self.embedding_function(chunks) if chunks else []
+        for doc_id, chunk, source, vector in zip(ids, chunks, sources, vectors):
+            self._docs.append({
+                "id": doc_id,
+                "content": chunk,
+                "source": source,
+                "vector": vector,
+            })
 
     def _chunk_text(self, text: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
         """Split text into overlapping chunks"""
