@@ -1,0 +1,28 @@
+# SLO Policy
+
+Service Level Objectives Policy
+
+1. Availability SLOs
+   - Production services: 99.9% minimum availability
+   - Critical services: 99.95% minimum availability
+   - Non-critical services: 99.5% minimum availability
+
+2. Latency SLOs
+   - API response time: 95% of requests < 500ms
+   - Database queries: 99% of queries < 100ms
+   - Batch processing: 95% of jobs complete within SLA
+
+3. Resource Utilization Targets
+   - CPU utilization: 20-80% optimal range
+   - Memory utilization: 40-85% optimal range
+   - Storage utilization: Should not exceed 85%
+
+4. Error Budget
+   - Allow 0.1% error rate for 99.9% SLO
+   - Alert when error budget consumed > 50%
+   - Stop-the-world incident at 100% error budget
+
+5. Monitoring Requirements
+   - Real-time metrics collection
+   - Automated alerting on SLO breach
+   - Monthly SLO compliance report

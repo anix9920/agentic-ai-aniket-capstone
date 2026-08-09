@@ -1,0 +1,10 @@
+# Rightsizing Guide
+
+Rightsizing Recommendations:
+1. CPU < 10% → Downsize resource
+2. CPU < 5% → Shutdown resource
+3. CPU > 85% → Scale resource
+4. Monthly cost increased > 30% → Investigate cost anomaly
+5. Storage growth > 20% → Review lifecycle policy
+6. Latency > 1000 ms → Performance investigation
+7. Availability < 99.9 → Review high availability configuration

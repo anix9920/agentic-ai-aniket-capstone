@@ -1,0 +1,31 @@
+# Approval Policy
+
+CloudOptima AI Approval Policy
+
+1. Approval Levels
+   - Level 1 (Automated): Shutdown of resources with < 5% CPU and confirmed idle
+   - Level 2 (Team Lead): Downsize/rightsizing recommendations with 20-50% savings
+   - Level 3 (Manager): Scale-up recommendations and storage policy changes
+   - Level 4 (Director): Architecture changes, reserved instance purchases
+
+2. Approval Criteria
+   - Must include business impact analysis
+   - Must show estimated savings with confidence level
+   - Must have rollback plan documented
+   - Must not violate SLO commitments
+
+3. Auto-Approval Rules
+   - Resources tagged with "auto-optimize=true"
+   - Development environments during off-hours
+   - Savings < $50/month with < 5% performance impact
+
+4. Rejection Reasons
+   - Insufficient business justification
+   - High risk to availability SLOs
+   - Missing rollback procedure
+   - Conflicting active incidents
+
+5. Audit Trail
+   - All approvals logged with timestamp, approver, rationale
+   - Quarterly audit of approval decisions
+   - Metrics: approval rate, implementation success, actual savings
