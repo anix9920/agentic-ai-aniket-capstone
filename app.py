@@ -31,7 +31,7 @@ def ensure_results():
 
 
 st.sidebar.title("CloudOptima AI")
-page = st.sidebar.radio("Navigate", ["Dashboard", "Recommendations", "Approval Screen", "Knowledge Search"])
+page = st.sidebar.radio("Navigate", ["Dashboard", "Recommendations", "Approval Screen", "Knowledge Search", "Chat"])
 
 if st.sidebar.button("Run New Analysis"):
     with st.spinner("Running agent workflow..."):
@@ -143,3 +143,39 @@ elif page == "Knowledge Search":
                 with st.container(border=True):
                     st.caption(f"Source: {r['source']}")
                     st.write(r["content"])
+
+
+elif page == "Chat":
+    st.title("Cloud Optimization Assistant")
+    st.caption("Ask about cloud cost optimization — rightsizing, capacity, SLOs, cost anomalies, and approval policies. Off-topic questions are refused.")
+
+    SAMPLE_QUESTIONS = [
+        "What are the rightsizing guidelines for underutilized instances?",
+        "What are the availability and latency SLO targets?",
+        "How are shutdown recommendations approved?",
+        "What triggers a cost anomaly investigation?",
+        "How should idle resources be handled to cut costs?",
+    ]
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    def respond(text: str):
+        st.session_state.messages.append({"role": "user", "content": text})
+        resp = call_api("POST", "/chat", json={"message": text})
+        answer = resp["answer"] if resp else "Cannot reach the backend. Start it with: uvicorn main:app --reload"
+        st.session_state.messages.append({"role": "assistant", "content": answer})
+
+    picked = st.pills("Sample questions", SAMPLE_QUESTIONS, selection_mode="single", key="sample_pill")
+    if picked:
+        respond(picked)
+        st.session_state.pop("sample_pill", None)
+        st.rerun()
+
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    if prompt := st.chat_input("Ask about cloud optimization..."):
+        respond(prompt)
+        st.rerun()

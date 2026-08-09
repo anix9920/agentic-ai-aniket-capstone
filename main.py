@@ -33,6 +33,10 @@ class SearchRequest(BaseModel):
     n_results: int = 3
 
 
+class ChatRequest(BaseModel):
+    message: str
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -78,3 +82,9 @@ def approve(request: ApproveRequest):
 def search(request: SearchRequest):
     """Query the ChromaDB knowledge base directly"""
     return {"results": workflow.rag_agent.query(request.query, n_results=request.n_results)}
+
+
+@app.post("/chat")
+def chat(request: ChatRequest):
+    """RAG-grounded chatbot - cloud-optimization questions only; other topics are refused."""
+    return {"answer": workflow.chat(request.message)}

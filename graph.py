@@ -1,5 +1,6 @@
 """LangGraph Implementation - wires the 7 agents into one workflow"""
 
+import re
 from typing import Dict, List, TypedDict
 from langgraph.graph import StateGraph, END
 
@@ -11,6 +12,23 @@ from agents.performance_agent import PerformanceAgent
 from agents.rag_agent import RAGAgent
 from agents.recommendation_agent import RecommendationAgent
 from agents.approval_agent import ApprovalAgent
+
+
+_CLOUD_TOPIC_RE = re.compile(
+    r"(cloud|aws|azure|gcp|ec2|s3|vm\b|instance|server|host\b|cluster|kubernetes|container|docker|storage|"
+    r"bucket|database|\bdb\b|load balancer|network|bandwidth|cpu|memory|ram\b|disk|utilization|capacity|"
+    r"rightsiz|downsize|scale|shutdown|idle|cost|spend|billing|\bbill\b|budget|pric|saving|save|"
+    r"optimiz|anomaly|slo|availability|latency|policy|approval|resource|autoscaling|monitor|efficiency|waste)",
+    re.IGNORECASE,
+)
+
+_CHAT_SYSTEM = (
+    "You are CloudOptima AI, a cloud cost optimization assistant. "
+    "Answer ONLY questions about cloud cost optimization: rightsizing, capacity, SLOs, cost anomalies, "
+    "and approval policies. Ground your answer in the provided policy context and cite its source when relevant. "
+    "If the question is not about cloud optimization, politely decline and say you can only help with cloud "
+    "optimization topics. Be concise."
+)
 
 
 class AnalysisState(TypedDict):
@@ -148,3 +166,20 @@ class Workflow:
             "approval_status": {},
             "executive_summary": "",
         })
+
+    def chat(self, message: str) -> str:
+        """Answer a cloud-optimization question, grounded in the RAG knowledge base. Refuses off-topic queries."""
+        message = message.strip()
+        if not _CLOUD_TOPIC_RE.search(message):
+            return ("I can only help with cloud cost optimization questions — rightsizing, capacity, SLOs, "
+                    "cost anomalies, and approval policies. Try one of the sample questions.")
+
+        context = self.rag_agent.get_context_for_query(message)
+        if not context:
+            return "I couldn't find relevant policy guidance for that question."
+        if not llm_enabled():
+            return context  # already formatted "[Source: ...]\n..."
+        try:
+            return generate(_CHAT_SYSTEM, f"Question: {message}\n\nRelevant policy context:\n{context}")
+        except Exception:
+            return "I couldn't reach the language model right now. Please try again in a moment."
