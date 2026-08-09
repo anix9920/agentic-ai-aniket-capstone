@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudOptima AI — Capstone Presentation</title>
+<style>
+  :root{
+    --bg0:#070b16;
+    --bg1:#0d1428;
+    --bg2:#111a33;
+    --ink:#e8edf7;
+    --muted:#8fa0c0;
+    --line:rgba(255,255,255,.10);
+    --card:rgba(255,255,255,.045);
+    --card-strong:rgba(255,255,255,.07);
+    --a1:#6c7bff;
+    --a2:#22d3ee;
+    --good:#34d399;
+    --warn:#fbbf24;
+    --bad:#f87171;
+    --grad:linear-gradient(90deg,#6c7bff,#22d3ee);
+    --shadow:0 24px 60px rgba(0,0,0,.45);
+    --r:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:
+      radial-gradient(1200px 700px at 85% -10%,rgba(108,123,255,.16),transparent 60%),
+      radial-gradient(900px 600px at -10% 110%,rgba(34,211,238,.12),transparent 55%),
+      linear-gradient(160deg,var(--bg0),var(--bg1) 55%,var(--bg2));
+    background-attachment:fixed;
+    color:var(--ink);
+    overflow:hidden;
+  }
+  /* progress bar */
+  #progress{position:fixed;top:0;left:0;height:4px;background:var(--grad);z-index:60;width:0;transition:width .35s ease}
+  /* chrome */
+  #ui{position:fixed;inset:0;pointer-events:none;z-index:50}
+  #ui .counter{position:absolute;right:26px;bottom:20px;font-size:.85rem;color:var(--muted);letter-spacing:.08em}
+  #ui .counter b{color:var(--ink);font-size:1rem}
+  #ui .dots{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:8px}
+  #ui .dots span{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16);cursor:pointer;transition:.25s;pointer-events:auto}
+  #ui .dots span.on{background:var(--grad);transform:scale(1.25)}
+  #ui .nav{position:absolute;top:50%;transform:translateY(-50%);pointer-events:auto;cursor:pointer;width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:1.4rem;display:grid;place-items:center;transition:.2s;backdrop-filter:blur(6px)}
+  #ui .nav:hover{background:var(--card-strong);border-color:rgba(108,123,255,.5)}
+  #ui .nav.prev{left:20px}
+  #ui .nav.next{right:20px}
+  @media (max-width:900px){#ui .nav{display:none}}
+
+  /* slides */
+  .deck{height:100vh;width:100vw}
+  .slide{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    padding:clamp(24px,5vw,80px);
+    opacity:0;visibility:hidden;transform:translateY(24px);
+    transition:opacity .45s ease,transform .45s ease,visibility .45s;
+    overflow-y:auto;
+  }
+  .slide.active{opacity:1;visibility:visible;transform:none;position:relative}
+  .inner{width:min(1150px,100%);margin:auto}
+  .kicker{display:inline-flex;align-items:center;gap:.5rem;text-transform:uppercase;letter-spacing:.22em;font-size:.78rem;font-weight:700;color:var(--a2);margin-bottom:1.1rem}
+  .kicker::before{content:"";width:34px;height:2px;background:var(--grad);border-radius:2px}
+  h1{font-size:clamp(2.4rem,6vw,4.4rem);line-height:1.05;font-weight:800;letter-spacing:-.02em;margin-bottom:1rem}
+  h2{font-size:clamp(1.9rem,4.2vw,3rem);font-weight:800;letter-spacing:-.01em;margin-bottom:.5rem}
+  .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:clamp(1.05rem,1.6vw,1.35rem);color:var(--muted);max-width:60ch;line-height:1.6}
+  .sub{font-size:1.02rem;color:var(--muted);line-height:1.6;max-width:70ch}
+  .mt{margin-top:1.6rem}
+  .mts{margin-top:.9rem}
+
+  /* cards & grids */
+  .grid{display:grid;gap:16px;margin-top:1.8rem}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;transition:transform .2s,border-color .2s}
+  .card:hover{transform:translateY(-3px);border-color:rgba(108,123,255,.45)}
+  .card .ico{font-size:1.7rem;margin-bottom:.7rem;display:block}
+  .card h3{font-size:1.12rem;font-weight:700;margin-bottom:.4rem}
+  .card p{color:var(--muted);font-size:.95rem;line-height:1.55}
+  .card .tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-top:.6rem}
+  .tag.tc{background:rgba(108,123,255,.16);color:#a5b0ff}
+  .tag.tp{background:rgba(34,211,238,.14);color:#67e8f9}
+  .tag.tg{background:rgba(52,211,153,.14);color:#6ee7b7}
+  .tag.tw{background:rgba(251,191,36,.14);color:#fcd34d}
+
+  /* pipeline */
+  .flow{display:flex;flex-wrap:wrap;gap:0;margin-top:2rem;align-items:stretch;justify-content:center}
+  .step{flex:1 1 120px;max-width:150px;background:var(--card-strong);border:1px solid var(--line);border-radius:14px;padding:14px 10px;text-align:center;position:relative}
+  .step .n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--grad);font-size:.8rem;font-weight:800;margin-bottom:8px}
+  .step .t{font-size:.86rem;font-weight:700;line-height:1.2}
+  .step .d{font-size:.72rem;color:var(--muted);margin-top:4px;line-height:1.3}
+  .arrow{align-self:center;color:var(--a2);font-size:1.1rem;padding:0 4px}
+  @media (max-width:760px){.arrow{display:none}}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;margin-top:1.4rem;font-size:.92rem}
+  th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line)}
+  td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+  tr:hover td{background:rgba(255,255,255,.03)}
+  code{font-family:Consolas,"Cascadia Mono",monospace;background:rgba(108,123,255,.12);color:#b9c3ff;padding:2px 7px;border-radius:6px;font-size:.85em}
+  .mono{font-family:Consolas,"Cascadia Mono",monospace}
+
+  /* arch diagram */
+  .arch{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:1.8rem}
+  .archbox{background:var(--card-strong);border:1px solid var(--line);border-radius:14px;padding:14px 26px;text-align:center;min-width:min(520px,90%)}
+  .archbox b{font-size:1.05rem}
+  .archbox .port{display:inline-block;font-family:Consolas,monospace;font-size:.78rem;color:var(--a2);background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.25);border-radius:8px;padding:2px 8px;margin-left:8px}
+  .archbox .role{color:var(--muted);font-size:.82rem;margin-top:2px}
+  .archarrow{color:var(--a2);font-size:1.2rem;line-height:1}
+
+  /* pill / callout */
+  .callout{display:flex;gap:14px;align-items:flex-start;background:var(--card-strong);border:1px solid var(--line);border-left:4px solid var(--a2);border-radius:14px;padding:18px 20px;margin-top:1.6rem}
+  .callout .ico{font-size:1.5rem;line-height:1.4}
+  .callout p{color:var(--muted);font-size:.97rem;line-height:1.6}
+
+  /* code block */
+  pre{background:#0a0f1e;border:1px solid var(--line);border-radius:14px;padding:18px 20px;overflow-x:auto;margin-top:1.4rem;font-family:Consolas,"Cascadia Mono",monospace;font-size:.9rem;line-height:1.7;color:#c7d2fe}
+  pre .cm{color:#64748b}
+  pre .gr{color:var(--good)}
+  pre .cy{color:var(--a2)}
+  pre .yl{color:var(--warn)}
+
+  .stat-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:1.6rem}
+  .stat{flex:1 1 150px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .stat .v{font-size:1.9rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .l{font-size:.8rem;color:var(--muted);margin-top:2px}
+
+  .big{font-size:clamp(2.6rem,9vw,6.5rem);font-weight:900;letter-spacing:-.03em;line-height:1;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:1rem}
+  .center{text-align:center}
+
+  /* overview grid */
+  body.overview .deck{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;padding:70px 30px 60px;height:100vh;overflow:auto}
+  body.overview .slide{position:static;opacity:1;visibility:visible;transform:none;align-items:stretch}
+  body.overview .slide .inner{width:auto}
+  body.overview .slide{display:block}
+  body.overview #ui{display:none}
+
+  /* print */
+  @media print{
+    body{background:#fff;color:#111;overflow:visible}
+    #ui,#progress{display:none!important}
+    .deck{height:auto}
+    .slide{position:static;opacity:1;visibility:visible;transform:none;page-break-after:always;min-height:100vh}
+    :root{--card:#f4f6fb;--card-strong:#eef1f8;--line:#d7dce8;--muted:#5a6780;--bg0:#fff}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div id="ui">
+  <div class="nav prev" id="prev">‹</div>
+  <div class="nav next" id="next">›</div>
+  <div class="dots" id="dots"></div>
+  <div class="counter"><b id="n"></b> / <span id="t"></span></div>
+</div>
+
+<main class="deck" id="deck">
+
+  <!-- 1 · Cover -->
+  <section class="slide">
+    <div class="inner center">
+      <div class="kicker" style="justify-content:center">Capstone Project · Agentic AI</div>
+      <div class="big">CloudOptima AI</div>
+      <p class="lede" style="margin:0 auto">Cloud Cost, Performance &amp; Capacity Optimization Agent — a beginner-friendly, <b style="color:var(--ink)">fully local</b> Agentic AI demo built on LangGraph, FastAPI &amp; Streamlit.</p>
+      <div class="stat-row" style="justify-content:center">
+        <div class="stat"><div class="v">7</div><div class="l">AI Agents</div></div>
+        <div class="stat"><div class="v">1</div><div class="l">Workflow Graph</div></div>
+        <div class="stat"><div class="v">0</div><div class="l">Cloud / DB / Docker</div></div>
+      </div>
+      <p class="sub mt" style="margin:1.4rem auto 0;font-size:.85rem">Use <code>←</code> <code>→</code> to navigate · <code>Esc</code> for overview · <code>F11</code> for fullscreen</p>
+    </div>
+  </section>
+
+  <!-- 2 · Problem -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">The Problem</div>
+      <h2>Cloud spend is silently leaking — in three ways</h2>
+      <div class="grid g3">
+        <div class="card"><span class="ico">💸</span><h3>Overspend</h3><p>Idle VMs burn money every month, and cost spikes go unnoticed until the bill arrives. Most teams have no automated triage.</p><span class="tag tw">Money</span></div>
+        <div class="card"><span class="ico">📉</span><h3>Performance risk</h3><p>Overloaded resources breach latency &amp; availability SLOs quietly. Users feel it before the platform team does.</p><span class="tag tp">Reliability</span></div>
+        <div class="card"><span class="ico">🕵️</span><h3>Blind spots</h3><p>Findings live in spreadsheets and dashboards. Nothing connects the <i>signal</i> to a recommended <i>action</i> — and nobody enforces it.</p><span class="tag tc">Operations</span></div>
+      </div>
+      <div class="callout"><span class="ico">🎯</span><p>CloudOptima AI automates the whole loop: <b>spot the problem → recommend a fix → estimate savings → get human approval → produce an action plan</b>.</p></div>
+    </div>
+  </section>
+
+  <!-- 3 · What it is -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">The Solution</div>
+      <h2>An end-to-end optimization agent, <span class="grad">zero setup</span></h2>
+      <p class="sub">A multi-agent pipeline that reads monitoring data, detects cost / capacity / performance issues, grounds its advice in a policy knowledge base, and proposes an approved action plan.</p>
+      <div class="grid g4">
+        <div class="card"><span class="ico">🤖</span><h3>Agentic AI</h3><p>7 specialized agents wired into one LangGraph workflow.</p></div>
+        <div class="card"><span class="ico">🧠</span><h3>Real RAG</h3><p>Retrieval over a policy knowledge base — pure Python, no native deps.</p></div>
+        <div class="card"><span class="ico">✋</span><h3>Human-in-the-loop</h3><p>Nothing changes until a human approves each recommendation.</p></div>
+        <div class="card"><span class="ico">🖥️</span><h3>Fully local</h3><p>Mock CSV data. No cloud calls, no database, no auth, no Docker.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · Architecture -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">Architecture</div>
+      <h2>Three layers, one workflow</h2>
+      <div class="arch">
+        <div class="archbox"><b>Streamlit UI</b><span class="port">:8501</span><div class="role">Dashboard · Recommendations · Approval · Knowledge Search</div></div>
+        <div class="archarrow">↕&nbsp; HTTP / JSON</div>
+        <div class="archbox"><b>FastAPI backend</b><span class="port">:8000</span><div class="role"><code>/health</code> <code>/analyze</code> <code>/results</code> <code>/approve</code> <code>/search</code></div></div>
+        <div class="archarrow">↓&nbsp; runs</div>
+        <div class="archbox"><b>LangGraph workflow</b><div class="role">Data → Cost → Capacity → Performance → RAG → Recommendation → Approval</div></div>
+        <div class="archarrow">↓&nbsp; reads</div>
+        <div class="archbox"><b>Data &amp; knowledge</b><div class="role">data/*.csv · data/knowledge/*.txt</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · Pipeline -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">The Agentic Pipeline</div>
+      <h2>Seven agents, one directed graph</h2>
+      <p class="sub">Each node specializes in one job and hands a richer state to the next. Implemented with LangGraph — typed state flows through compiled nodes to <code>END</code>.</p>
+      <div class="flow">
+        <div class="step"><span class="n">1</span><div class="t">Data</div><div class="d">Load &amp; merge CSVs</div></div><span class="arrow">→</span>
+        <div class="step"><span class="n">2</span><div class="t">Cost</div><div class="d">Expensive + spikes</div></div><span class="arrow">→</span>
+        <div class="step"><span class="n">3</span><div class="t">Capacity</div><div class="d">Idle / overload / storage</div></div><span class="arrow">→</span>
+        <div class="step"><span class="n">4</span><div class="t">Performance</div><div class="d">Latency &amp; availability</div></div><span class="arrow">→</span>
+        <div class="step"><span class="n">5</span><div class="t">RAG</div><div class="d">Pull policy context</div></div><span class="arrow">→</span>
+        <div class="step"><span class="n">6</span><div class="t">Recommendation</div><div class="d">Action + savings</div></div><span class="arrow">→</span>
+        <div class="step"><span class="n">7</span><div class="t">Approval</div><div class="d">Approve → action plan</div></div>
+      </div>
+      <pre><span class="cm"># graph.py — the whole workflow in ~20 lines</span>
+<span class="gr">graph</span>.add_edge(<span class="cy">"data"</span>, <span class="cy">"cost"</span>)        <span class="gr">graph</span>.add_edge(<span class="cy">"performance"</span>, <span class="cy">"rag"</span>)
+<span class="gr">graph</span>.add_edge(<span class="cy">"cost"</span>, <span class="cy">"capacity"</span>)     <span class="gr">graph</span>.add_edge(<span class="cy">"rag"</span>, <span class="cy">"recommendation"</span>)
+<span class="gr">graph</span>.add_edge(<span class="cy">"capacity"</span>, <span class="cy">"performance"</span>) <span class="gr">graph</span>.add_edge(<span class="cy">"recommendation"</span>, <span class="cy">"approval"</span>)
+<span class="gr">graph</span>.add_edge(<span class="cy">"approval"</span>, <span class="yl">END</span>)</pre>
+    </div>
+  </section>
+
+  <!-- 6 · Agents deep dive -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">The Cast</div>
+      <h2>Meet the seven agents</h2>
+      <div class="grid g4">
+        <div class="card"><span class="ico">📄</span><h3>Data Agent</h3><p>Reads <code>cloud_cost.csv</code> + <code>resource_metrics.csv</code>, joins on <code>resource_id</code>.</p><span class="tag tc">foundation</span></div>
+        <div class="card"><span class="ico">💰</span><h3>Cost Agent</h3><p>Flags spend above <b>mean + 1σ</b> and cost increases &gt; <b>30%</b>.</p><span class="tag tw">cost</span></div>
+        <div class="card"><span class="ico">📦</span><h3>Capacity Agent</h3><p>Idle (CPU &lt; 10%), overloaded (&gt; 85%), storage growth &gt; 20%.</p><span class="tag tp">capacity</span></div>
+        <div class="card"><span class="ico">⚡</span><h3>Performance Agent</h3><p>Latency &gt; 1000&nbsp;ms and availability &lt; 99.9%.</p><span class="tag tp">slo</span></div>
+        <div class="card"><span class="ico">📚</span><h3>RAG Agent</h3><p>Retrieves policy text for each issue via a pure-Python vector index.</p><span class="tag tc">knowledge</span></div>
+        <div class="card"><span class="ico">🎯</span><h3>Recommendation Agent</h3><p>Turns findings into actions with <b>savings estimates</b> + business impact.</p><span class="tag tg">value</span></div>
+        <div class="card"><span class="ico">✅</span><h3>Approval Agent</h3><p>Mock approve/reject queue; only approved items form the final plan.</p><span class="tag tw">control</span></div>
+        <div class="card" style="display:flex;align-items:center;justify-content:center;text-align:center"><p style="font-size:.95rem;color:var(--ink)"><b>7 agents,<br>~zero shared state</b><br><span style="color:var(--muted)">each one is a small, readable Python class</span></p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · Detection rules -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">The Brain</div>
+      <h2>Every rule is readable code</h2>
+      <p class="sub">No magic — each agent is a threshold-based detector you can open and edit. Changing a threshold changes the demo.</p>
+      <table>
+        <thead><tr><th>Signal</th><th>Threshold</th><th>Recommended action</th></tr></thead>
+        <tbody>
+          <tr><td>Monthly cost</td><td>&gt; mean + 1 std dev</td><td>Review spend</td></tr>
+          <tr><td>Cost increase</td><td>&gt; 30% vs last month</td><td>Investigate cost anomaly</td></tr>
+          <tr><td>CPU / memory average</td><td>&lt; 10% / &lt; 20%</td><td>Downsize resource</td></tr>
+          <tr><td>CPU average</td><td>&lt; 5%</td><td>Shutdown (idle)</td></tr>
+          <tr><td>CPU or memory</td><td>&gt; 85%</td><td>Scale up</td></tr>
+          <tr><td>Storage growth</td><td>&gt; 20%</td><td>Review lifecycle policy</td></tr>
+          <tr><td>Latency</td><td>&gt; 1000 ms</td><td>Caching → scale → optimize → redesign</td></tr>
+          <tr><td>Availability</td><td>&lt; 99.9%</td><td>Review HA configuration</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 8 · Sample findings -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">It Works</div>
+      <h2>Sample run over the mock fleet</h2>
+      <table>
+        <thead><tr><th>Resource</th><th>Issue found</th><th>Recommended action</th><th>Est. savings</th></tr></thead>
+        <tbody>
+          <tr><td>db-server-01</td><td>Overutilized · high cost $1,500</td><td>Scale up / investigate</td><td class="mono" style="color:var(--muted)">—</td></tr>
+          <tr><td>api-gateway-01</td><td>Overutilized (CPU 85%)</td><td>Scale up</td><td class="mono" style="color:var(--warn)">−$180/mo</td></tr>
+          <tr><td>batch-processor-01</td><td>Cost +33% ($2,000)</td><td>Investigate anomaly</td><td class="mono" style="color:var(--muted)">—</td></tr>
+          <tr><td>media-files (storage)</td><td>Storage +35% · cost +33%</td><td>Review lifecycle policy</td><td class="mono" style="color:var(--good)">+$160/mo</td></tr>
+          <tr><td>logs-bucket (storage)</td><td>Storage growth +25%</td><td>Review lifecycle policy</td><td class="mono" style="color:var(--good)">+$60/mo</td></tr>
+          <tr><td>backup-bucket (storage)</td><td>Storage growth +30%</td><td>Review lifecycle policy</td><td class="mono" style="color:var(--good)">+$90/mo</td></tr>
+          <tr><td>web-server-01</td><td>Availability 99.5% &lt; 99.9%</td><td>Review HA configuration</td><td class="mono" style="color:var(--muted)">—</td></tr>
+        </tbody>
+      </table>
+      <div class="callout"><span class="ico">💡</span><p>Each estimate comes from the <b>Savings Calculator</b> — shutdown = 80% of monthly cost, downsize = 30%, lifecycle = 20%, scale-up = −20% (cost of growth), investigations = 0.</p></div>
+    </div>
+  </section>
+
+  <!-- 9 · RAG -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">RAG · Retrieval-Augmented Generation</div>
+      <h2>Grounded advice, <span class="grad">zero native dependencies</span></h2>
+      <p class="sub">Recommendations are grounded in a policy knowledge base (<code>data/knowledge/*.txt</code>) — the agent retrieves the relevant clause before suggesting an action, then cites its source.</p>
+      <div class="grid g3">
+        <div class="card"><span class="ico">🔤</span><h3>Hashing embedder</h3><p>256-dim bag-of-words vectors via a deterministic hash. No ML model, no training.</p></div>
+        <div class="card"><span class="ico">📏</span><h3>Cosine search</h3><p>Chunks are embedded once at startup; queries rank by 1 − cosine similarity.</p></div>
+        <div class="card"><span class="ico">🧱</span><h3>Pure Python</h3><p>std-lib only (<code>hashlib</code>, <code>math</code>, <code>re</code>). Nothing to install, nothing native.</p></div>
+      </div>
+      <div class="callout"><span class="ico">🔧</span><p><b>Resolved engineering challenge:</b> an earlier version used ChromaDB, whose native Rust/SQLite/ONNX backend crashed the process on some Windows setups. Replaced with a pure-Python in-memory vector index — the backend now starts reliably on any machine. (<code>chroma_db/</code> is no longer used.)</p></div>
+    </div>
+  </section>
+
+  <!-- 10 · Human in the loop -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">Human-in-the-loop</div>
+      <h2>Nothing changes without approval</h2>
+      <p class="sub">The Approval Agent queues every recommendation as <b>pending</b>. A human approves or rejects each one; only approved items become the final action plan.</p>
+      <div class="grid g3">
+        <div class="card center" style="text-align:center"><div class="ico">📋</div><h3>1 · Pending</h3><p>All recommendations queued for review.</p></div>
+        <div class="card center" style="text-align:center"><div class="ico">🧑‍💼</div><h3>2 · Decide</h3><p>Human clicks <b>Approve</b> or <b>Reject</b> per resource.</p></div>
+        <div class="card center" style="text-align:center"><div class="ico">🚀</div><h3>3 · Action plan</h3><p>Approved items only → final plan.</p></div>
+      </div>
+      <pre><span class="cm"># main.py — the approval endpoint</span>
+<span class="cy">@app</span>.post(<span class="yl">"/approve"</span>)
+<span class="gr">def</span> approve(request):
+    decision = workflow.approval_agent.decide(request.resource_id, request.approved)
+    <span class="gr">return</span> {<span class="yl">"decision"</span>: decision, <span class="yl">"action_plan"</span>: workflow.approval_agent.get_action_plan()}</pre>
+    </div>
+  </section>
+
+  <!-- 11 · Tech stack -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">Tech Stack</div>
+      <h2>Small, free, and beginner-friendly</h2>
+      <p class="sub">Seven Python dependencies — that's the whole stack. Everything runs on a laptop with Python 3.10+.</p>
+      <div class="grid g4">
+        <div class="card"><span class="ico">🕸️</span><h3>LangGraph</h3><p>Orchestrates the 7-agent workflow graph.</p></div>
+        <div class="card"><span class="ico">⚡</span><h3>FastAPI + Uvicorn</h3><p>Lightning REST backend &amp; server.</p></div>
+        <div class="card"><span class="ico">📊</span><h3>Streamlit</h3><p>The whole UI — ~140 lines.</p></div>
+        <div class="card"><span class="ico">🐼</span><h3>Pandas</h3><p>CSV loading &amp; joins.</p></div>
+        <div class="card"><span class="ico">✅</span><h3>Pydantic</h3><p>Request validation.</p></div>
+        <div class="card"><span class="ico">🌐</span><h3>Requests</h3><p>UI ↔ API calls.</p></div>
+      </div>
+      <div class="callout"><span class="ico">🚫</span><p>Deliberately <b>excluded</b>: cloud SDKs, a real database, authentication, Docker, and any native ML dependency — so the demo runs anywhere, instantly.</p></div>
+    </div>
+  </section>
+
+  <!-- 12 · Run it -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">Live Demo</div>
+      <h2>Two commands to run it</h2>
+      <pre><span class="cm"># Terminal 1 — API backend</span>
+<span class="gr">uvicorn</span> <span class="cy">main:app</span> --reload        <span class="cm"># → http://localhost:8000/docs</span>
+
+<span class="cm"># Terminal 2 — UI</span>
+<span class="gr">streamlit</span> run <span class="cy">app.py</span>              <span class="cm"># → http://localhost:8501</span></pre>
+      <div class="grid g3">
+        <div class="card"><span class="ico">🏠</span><h3>Dashboard</h3><p>Run analysis → resources, opportunities &amp; total potential savings.</p></div>
+        <div class="card"><span class="ico">🔎</span><h3>Recommendations</h3><p>Every issue, action, savings estimate &amp; business impact.</p></div>
+        <div class="card"><span class="ico">✅</span><h3>Approval + Search</h3><p>Approve/reject items → action plan · free-text policy search.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 · Takeaways -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker">Takeaways</div>
+      <h2>What this capstone demonstrates</h2>
+      <div class="grid g4">
+        <div class="card"><span class="ico">🧩</span><h3>Real agentic pipeline</h3><p>End-to-end LangGraph workflow — not a single hardcoded answer.</p></div>
+        <div class="card"><span class="ico">📚</span><h3>Grounded RAG</h3><p>Real retrieval over policy docs with a dependency-free vector index.</p></div>
+        <div class="card"><span class="ico">✋</span><h3>Safe automation</h3><p>Human approval gate between recommendation and action.</p></div>
+        <div class="card"><span class="ico">🖥️</span><h3>Runs anywhere</h3><p>Mock data, no cloud, no DB, no Docker — open it on any machine.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 · Close -->
+  <section class="slide">
+    <div class="inner center">
+      <div class="kicker" style="justify-content:center">Thank you</div>
+      <div class="big">Questions?</div>
+      <p class="lede" style="margin:0 auto">CloudOptima AI — an agentic, human-approved path from cloud signal to savings.</p>
+      <div class="stat-row" style="justify-content:center">
+        <div class="stat"><div class="v">7</div><div class="l">Agents</div></div>
+        <div class="stat"><div class="v">0</div><div class="l">External services</div></div>
+        <div class="stat"><div class="v">∞</div><div class="l">Editable rules</div></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const dotsEl = document.getElementById('dots');
+  const count = slides.length;
+  let i = 0;
+
+  document.getElementById('t').textContent = count;
+
+  slides.forEach((_, n) => {
+    const d = document.createElement('span');
+    d.onclick = () => go(n);
+    dotsEl.appendChild(d);
+  });
+
+  function go(n){
+    i = (n + count) % count;
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    document.querySelectorAll('#dots span').forEach((d, k) => d.classList.toggle('on', k === i));
+    document.getElementById('n').textContent = i + 1;
+    document.getElementById('progress').style.width = ((i + 1) / count * 100) + '%';
+    document.body.classList.remove('overview');
+  }
+  const next = () => go(i + 1);
+  const prev = () => go(i - 1);
+
+  document.getElementById('next').onclick = next;
+  document.getElementById('prev').onclick = prev;
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') next();
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') prev();
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(count - 1);
+    else if (e.key === 'Escape' || e.key.toLowerCase() === 'o')
+      document.body.classList.toggle('overview');
+  });
+
+  let x0 = null;
+  document.addEventListener('touchstart', e => x0 = e.touches[0].clientX, {passive:true});
+  document.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 50) dx < 0 ? next() : prev();
+    x0 = null;
+  }, {passive:true});
+
+  go(0);
+</script>
+</body>
+</html>
