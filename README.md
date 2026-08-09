@@ -1,8 +1,9 @@
 # CloudOptima AI
 
-Cloud Cost, Performance & Capacity Optimization Agent — a beginner-friendly, fully local
-Agentic AI demo. Everything runs on mock CSV data with no cloud calls, no database, no
-authentication, and no Docker.
+Cloud Cost, Performance & Capacity Optimization Agent — a beginner-friendly Agentic AI
+demo on mock CSV data. No database, no authentication, no Docker. Runs fully offline by
+default; set an OpenRouter API key in `.env` to enable LLM-written summaries,
+recommendation impact text, real RAG embeddings, and a cloud-optimization chat assistant.
 
 ## Architecture
 
@@ -10,7 +11,7 @@ authentication, and no Docker.
 LangGraph workflow (graph.py):
 
   START -> Data Agent -> Cost Agent -> Capacity Agent -> Performance Agent
-        -> RAG Agent -> Recommendation Agent -> Approval Agent -> END
+        -> RAG Agent -> Recommendation Agent -> Approval Agent -> Summarize -> END
 
 FastAPI (main.py)  <-- calls -->  Streamlit UI (app.py)
       |
@@ -23,8 +24,13 @@ FastAPI (main.py)  <-- calls -->  Streamlit UI (app.py)
 - **Capacity Agent** — flags idle/underutilized (CPU < 10%), overutilized (CPU > 85%),
   and high storage growth (> 20%) resources.
 - **Performance Agent** — flags high latency (> 1000ms) and low availability (< 99.9%).
-- **RAG Agent** — retrieves relevant policy text from `data/knowledge/*.txt` via a
-  pure-Python in-memory vector index (no ChromaDB, no native dependencies).
+- **RAG Agent** — retrieves relevant policy text from `data/knowledge/*.txt` via an
+  in-memory vector index (OpenRouter embeddings when a key is set, pure-Python hashing
+  otherwise — no native dependencies).
+- **Summarize** — writes an executive summary of the analysis (LLM-written when a key is
+  set, template otherwise).
+- **Chat** — answers cloud-optimization questions grounded in the policy knowledge base;
+  off-topic questions are refused.
 - **Recommendation Agent** — turns findings into recommendations with estimated savings
   and a plain-English business impact statement.
 - **Approval Agent** — mock approve/reject workflow; only approved items make the final
@@ -89,6 +95,19 @@ hardcoded rates to `monthly_cost` (shutdown 80%, downsize 30%, storage
 optimization 20%, scale −20%). The mock data only drives *which findings*
 appear; the dollar figures are derived from constants.
 
+## Optional LLM (OpenRouter)
+
+Everything above runs with zero API calls. To enable the LLM features (executive
+summary, per-recommendation impact text, real embeddings, chat answers):
+
+1. `cp .env.example .env`
+2. Set `OPENROUTER_API_KEY` in `.env` (get one at https://openrouter.ai/keys).
+3. Optionally change `MODEL` (default `meta-llama/llama-3.1-8b-instruct`) or
+   `EMBEDDING_MODEL` (default `openai/text-embedding-3-small`).
+
+Without a key the app still works end-to-end using deterministic templates and
+hashing embeddings. The key stays in your local `.env`, which is gitignored.
+
 ## Setup
 
 Requires Python 3.10+.
@@ -132,6 +151,8 @@ Opens at http://localhost:8501.
    final action plan shown at the bottom.
 4. **Knowledge Search** — free-text search over the policy documents in
    `data/knowledge/`, served by the pure-Python RAG index.
+5. **Chat** — ask cloud-optimization questions (sample prompts provided). Answers are
+   grounded in the policy knowledge base; off-topic questions are refused.
 
 ## API only (no UI)
 
@@ -140,6 +161,7 @@ curl http://localhost:8000/health
 curl -X POST http://localhost:8000/analyze
 curl http://localhost:8000/results
 curl -X POST http://localhost:8000/approve -H "Content-Type: application/json" -d "{\"resource_id\": \"vm-003\", \"approved\": true}"
+curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "{\"message\": \"What are the rightsizing guidelines?\"}"
 ```
 
 ## Editing the mock data
