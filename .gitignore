@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Stale ChromaDB store (superseded by the pure-Python RAG index)
+chroma_db/
+
+# Claude Code local configuration
+.claude/
