@@ -5,3 +5,5 @@ langgraph
 streamlit
 pydantic
 requests
+langchain-openai
+python-dotenv

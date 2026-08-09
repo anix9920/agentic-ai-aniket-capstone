@@ -14,3 +14,6 @@ chroma_db/
 
 # Claude Code local configuration
 .claude/
+
+# Local secrets - never commit
+.env

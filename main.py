@@ -50,6 +50,7 @@ def analyze():
         "performance_findings": _to_plain(state["performance_findings"]),
         "recommendations": _to_plain(state["recommendations"]),
         "approval_status": state["approval_status"],
+        "summary": state["executive_summary"],
     }
     return _last_result
 

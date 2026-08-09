@@ -56,6 +56,10 @@ if page == "Dashboard":
         col2.metric("Optimization Opportunities", len(recommendations))
         col3.metric("Potential Monthly Savings", f"${total_savings:,.2f}")
 
+        if results.get("summary"):
+            st.subheader("Executive Summary")
+            st.markdown(results["summary"])
+
         st.subheader("All Monitored Resources")
         st.dataframe(resources, use_container_width=True)
 

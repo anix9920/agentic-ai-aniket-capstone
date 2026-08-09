@@ -4,6 +4,7 @@ from typing import List, Dict
 from dataclasses import dataclass
 
 from agents.calculator import SavingsCalculator
+from llm import generate, llm_enabled
 
 @dataclass
 class Recommendation:
@@ -70,5 +71,28 @@ class RecommendationAgent:
             if rag_agent is not None:
                 policy_context = rag_agent.query(f.get("issue", f.get("recommendation", "")))
 
-            recommendations.append(self.generate(f, policy_context))
+            rec = self.generate(f, policy_context)
+            if llm_enabled() and rag_agent is not None:
+                rec = self._enrich_with_llm(rec, rag_agent)
+            recommendations.append(rec)
         return recommendations
+
+    def _enrich_with_llm(self, rec: Recommendation, rag_agent) -> Recommendation:
+        """Draft a grounded business_impact with the LLM; fall back to the template on any failure."""
+        context = rag_agent.get_context_for_query(rec.issue or rec.recommended_action)
+        try:
+            rec.business_impact = generate(
+                "You are a cloud cost optimization engineer writing concise recommendation summaries for executives.",
+                (
+                    f"Resource: {rec.resource_name}\n"
+                    f"Issue: {rec.issue}\n"
+                    f"Recommended action: {rec.recommended_action}\n"
+                    f"Estimated monthly savings: ${rec.estimated_monthly_savings:,.2f}\n\n"
+                    f"Relevant policy guidance:\n{context}\n\n"
+                    "Write 2-3 sentences on the business impact and why this action is recommended, "
+                    "referencing the policy guidance where it applies. No preamble."
+                ),
+            )
+        except Exception:
+            pass  # keep the template impact
+        return rec

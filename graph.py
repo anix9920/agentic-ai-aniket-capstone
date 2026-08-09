@@ -3,6 +3,7 @@
 from typing import Dict, List, TypedDict
 from langgraph.graph import StateGraph, END
 
+from llm import generate, llm_enabled
 from agents.data_agent import DataAgent
 from agents.cost_agent import CostAgent
 from agents.capacity_agent import CapacityAgent
@@ -20,6 +21,7 @@ class AnalysisState(TypedDict):
     policy_context: List[Dict]
     recommendations: List
     approval_status: Dict
+    executive_summary: str
 
 
 class Workflow:
@@ -76,6 +78,40 @@ class Workflow:
         state["approval_status"] = {"pending": [d.__dict__ for d in decisions]}
         return state
 
+    def summarize_node(self, state: AnalysisState) -> AnalysisState:
+        state["executive_summary"] = self._executive_summary(state)
+        return state
+
+    def _executive_summary(self, state: AnalysisState) -> str:
+        """Concise summary of the analysis; LLM-written when available, template fallback otherwise."""
+        recs = state["recommendations"]
+        total_savings = sum(r.estimated_monthly_savings for r in recs)
+        template = (
+            f"Analysis reviewed {len(state['resources'])} cloud resources and surfaced "
+            f"{len(recs)} optimization opportunities worth an estimated ${total_savings:,.2f}/month. "
+            "Recommendations are queued for approval."
+        )
+        if not llm_enabled() or not recs:
+            return template
+
+        lines = "\n".join(
+            f"- {r.resource_name}: {r.recommended_action} (${r.estimated_monthly_savings:,.2f}/mo)"
+            for r in recs
+        )
+        try:
+            return generate(
+                "You are a cloud cost optimization engineer writing a short executive summary for leadership.",
+                (
+                    f"Analyzed {len(state['resources'])} cloud resources. "
+                    f"{len(recs)} optimization opportunities totaling ${total_savings:,.2f}/month.\n\n"
+                    f"Recommendations:\n{lines}\n\n"
+                    "Write a 2-3 sentence executive summary of the situation and the key actions proposed. "
+                    "No preamble."
+                ),
+            )
+        except Exception:
+            return template
+
     def build_graph(self) -> StateGraph:
         graph = StateGraph(AnalysisState)
 
@@ -86,6 +122,7 @@ class Workflow:
         graph.add_node("rag", self.rag_node)
         graph.add_node("recommendation", self.recommendation_node)
         graph.add_node("approval", self.approval_node)
+        graph.add_node("summarize", self.summarize_node)
 
         graph.set_entry_point("data")
         graph.add_edge("data", "cost")
@@ -94,7 +131,8 @@ class Workflow:
         graph.add_edge("performance", "rag")
         graph.add_edge("rag", "recommendation")
         graph.add_edge("recommendation", "approval")
-        graph.add_edge("approval", END)
+        graph.add_edge("approval", "summarize")
+        graph.add_edge("summarize", END)
 
         return graph
 
@@ -108,4 +146,5 @@ class Workflow:
             "policy_context": [],
             "recommendations": [],
             "approval_status": {},
+            "executive_summary": "",
         })
