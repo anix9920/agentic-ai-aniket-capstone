@@ -116,6 +116,24 @@ class RAGAgent:
 
     def get_context_for_query(self, question: str) -> str:
         """Get relevant context as formatted string for LLM"""
-        results = self.query(question)
+        if not self._docs:
+            return "No relevant knowledge found."
+        query_vector = self.embedding_function([question])[0]
+        return self._format_context(self._top_matches(query_vector))
+
+    def get_contexts_for_queries(self, questions: List[str]) -> List[str]:
+        """Embed all questions in one batch call; return formatted context per question."""
+        if not self._docs:
+            return ["No relevant knowledge found."] * len(questions)
+        if not questions:
+            return []
+        query_vectors = self.embedding_function(list(questions))
+        return [self._format_context(self._top_matches(qv)) for qv in query_vectors]
+
+    def _top_matches(self, query_vector, n_results: int = 3) -> List[Dict]:
+        key = lambda d: self._distance(query_vector, d["vector"])
+        return sorted(self._docs, key=key)[:n_results]
+
+    def _format_context(self, results: List[Dict]) -> str:
         context_parts = [f"[Source: {r['source']}]\n{r['content']}" for r in results]
         return "\n\n---\n\n".join(context_parts) if context_parts else "No relevant knowledge found."

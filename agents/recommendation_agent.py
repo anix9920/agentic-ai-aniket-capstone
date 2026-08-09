@@ -57,7 +57,12 @@ class RecommendationAgent:
         )
 
     def generate_all(self, findings: List[Dict], rag_agent=None) -> List[Recommendation]:
-        """Generate recommendations for a list of findings, deduplicated by resource_id"""
+        """Generate recommendations for a list of findings, deduplicated by resource_id.
+
+        LLM enrichment is parallelized so a large batch doesn't take N sequential calls.
+        """
+        from concurrent.futures import ThreadPoolExecutor
+
         seen = set()
         recommendations = []
         for finding in findings:
@@ -71,15 +76,21 @@ class RecommendationAgent:
             if rag_agent is not None:
                 policy_context = rag_agent.query(f.get("issue", f.get("recommendation", "")))
 
-            rec = self.generate(f, policy_context)
-            if llm_enabled() and rag_agent is not None:
-                rec = self._enrich_with_llm(rec, rag_agent)
-            recommendations.append(rec)
+            recommendations.append(self.generate(f, policy_context))
+
+        if llm_enabled() and rag_agent is not None:
+            # Embed every query in ONE batch call, then enrich all recs in parallel.
+            questions = [r.issue or r.recommended_action for r in recommendations]
+            contexts = rag_agent.get_contexts_for_queries(questions)
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                recommendations = list(pool.map(
+                    lambda rc: self._enrich_with_llm(rc[0], rc[1]),
+                    zip(recommendations, contexts),
+                ))
         return recommendations
 
-    def _enrich_with_llm(self, rec: Recommendation, rag_agent) -> Recommendation:
+    def _enrich_with_llm(self, rec: Recommendation, context: str) -> Recommendation:
         """Draft a grounded business_impact with the LLM; fall back to the template on any failure."""
-        context = rag_agent.get_context_for_query(rec.issue or rec.recommended_action)
         try:
             rec.business_impact = generate(
                 "You are a cloud cost optimization engineer writing concise recommendation summaries for executives.",

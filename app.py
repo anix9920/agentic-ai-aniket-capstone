@@ -10,7 +10,7 @@ st.set_page_config(page_title="CloudOptima AI", layout="wide")
 
 def call_api(method: str, path: str, **kwargs):
     try:
-        resp = requests.request(method, f"{API_URL}{path}", timeout=30, **kwargs)
+        resp = requests.request(method, f"{API_URL}{path}", timeout=120, **kwargs)
         if resp.status_code >= 400:
             st.error(f"API error ({resp.status_code}): {resp.json().get('detail', resp.text)}")
             return None
