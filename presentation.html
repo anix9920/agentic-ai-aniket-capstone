@@ -164,11 +164,11 @@
     <div class="inner center">
       <div class="kicker" style="justify-content:center">Capstone Project · Agentic AI</div>
       <div class="big">CloudOptima AI</div>
-      <p class="lede" style="margin:0 auto">Cloud Cost, Performance &amp; Capacity Optimization Agent — a beginner-friendly, <b style="color:var(--ink)">fully local</b> Agentic AI demo built on LangGraph, FastAPI &amp; Streamlit.</p>
+      <p class="lede" style="margin:0 auto">Cloud Cost, Performance &amp; Capacity Optimization Agent — a beginner-friendly Agentic AI demo built on LangGraph, FastAPI &amp; Streamlit. Runs offline on mock data; an optional LLM API (OpenRouter) lights up real summaries, embeddings &amp; chat.</p>
       <div class="stat-row" style="justify-content:center">
-        <div class="stat"><div class="v">7</div><div class="l">AI Agents</div></div>
+        <div class="stat"><div class="v">8</div><div class="l">Graph Nodes</div></div>
         <div class="stat"><div class="v">1</div><div class="l">Workflow Graph</div></div>
-        <div class="stat"><div class="v">0</div><div class="l">Cloud / DB / Docker</div></div>
+        <div class="stat"><div class="v">0</div><div class="l">Required Services</div></div>
       </div>
       <p class="sub mt" style="margin:1.4rem auto 0;font-size:.85rem">Use <code>←</code> <code>→</code> to navigate · <code>Esc</code> for overview · <code>F11</code> for fullscreen</p>
     </div>
@@ -195,10 +195,10 @@
       <h2>An end-to-end optimization agent, <span class="grad">zero setup</span></h2>
       <p class="sub">A multi-agent pipeline that reads monitoring data, detects cost / capacity / performance issues, grounds its advice in a policy knowledge base, and proposes an approved action plan.</p>
       <div class="grid g4">
-        <div class="card"><span class="ico">🤖</span><h3>Agentic AI</h3><p>7 specialized agents wired into one LangGraph workflow.</p></div>
-        <div class="card"><span class="ico">🧠</span><h3>Real RAG</h3><p>Retrieval over a policy knowledge base — pure Python, no native deps.</p></div>
+        <div class="card"><span class="ico">🤖</span><h3>Agentic AI</h3><p>8 specialized nodes wired into one LangGraph workflow.</p></div>
+        <div class="card"><span class="ico">🧠</span><h3>Real RAG</h3><p>Retrieval over a policy knowledge base — OpenRouter embeddings when a key is set, pure-Python hashing fallback.</p></div>
         <div class="card"><span class="ico">✋</span><h3>Human-in-the-loop</h3><p>Nothing changes until a human approves each recommendation.</p></div>
-        <div class="card"><span class="ico">🖥️</span><h3>Fully local</h3><p>Mock CSV data. No cloud calls, no database, no auth, no Docker.</p></div>
+        <div class="card"><span class="ico">🖥️</span><h3>Fully local</h3><p>Mock CSV data. No DB, no auth, no Docker. LLM features are optional — a key in <code>.env</code> turns them on.</p></div>
       </div>
     </div>
   </section>
@@ -209,11 +209,11 @@
       <div class="kicker">Architecture</div>
       <h2>Three layers, one workflow</h2>
       <div class="arch">
-        <div class="archbox"><b>Streamlit UI</b><span class="port">:8501</span><div class="role">Dashboard · Recommendations · Approval · Knowledge Search</div></div>
+        <div class="archbox"><b>Streamlit UI</b><span class="port">:8501</span><div class="role">Dashboard · Recommendations · Approval · Knowledge Search · Chat</div></div>
         <div class="archarrow">↕&nbsp; HTTP / JSON</div>
-        <div class="archbox"><b>FastAPI backend</b><span class="port">:8000</span><div class="role"><code>/health</code> <code>/analyze</code> <code>/results</code> <code>/approve</code> <code>/search</code></div></div>
+        <div class="archbox"><b>FastAPI backend</b><span class="port">:8000</span><div class="role"><code>/health</code> <code>/analyze</code> <code>/results</code> <code>/approve</code> <code>/search</code> <code>/chat</code></div></div>
         <div class="archarrow">↓&nbsp; runs</div>
-        <div class="archbox"><b>LangGraph workflow</b><div class="role">Data → Cost → Capacity → Performance → RAG → Recommendation → Approval</div></div>
+        <div class="archbox"><b>LangGraph workflow</b><div class="role">Data → Cost → Capacity → Performance → RAG → Recommendation → Approval → Summarize</div></div>
         <div class="archarrow">↓&nbsp; reads</div>
         <div class="archbox"><b>Data &amp; knowledge</b><div class="role">data/*.csv · data/knowledge/*.txt</div></div>
       </div>
@@ -224,7 +224,7 @@
   <section class="slide">
     <div class="inner">
       <div class="kicker">The Agentic Pipeline</div>
-      <h2>Seven agents, one directed graph</h2>
+      <h2>Eight nodes, one directed graph</h2>
       <p class="sub">Each node specializes in one job and hands a richer state to the next. Implemented with LangGraph — typed state flows through compiled nodes to <code>END</code>.</p>
       <div class="flow">
         <div class="step"><span class="n">1</span><div class="t">Data</div><div class="d">Load &amp; merge CSVs</div></div><span class="arrow">→</span>
@@ -233,13 +233,14 @@
         <div class="step"><span class="n">4</span><div class="t">Performance</div><div class="d">Latency &amp; availability</div></div><span class="arrow">→</span>
         <div class="step"><span class="n">5</span><div class="t">RAG</div><div class="d">Pull policy context</div></div><span class="arrow">→</span>
         <div class="step"><span class="n">6</span><div class="t">Recommendation</div><div class="d">Action + savings</div></div><span class="arrow">→</span>
-        <div class="step"><span class="n">7</span><div class="t">Approval</div><div class="d">Approve → action plan</div></div>
+        <div class="step"><span class="n">7</span><div class="t">Approval</div><div class="d">Approve → action plan</div></div><span class="arrow">→</span>
+        <div class="step"><span class="n">8</span><div class="t">Summarize</div><div class="d">Executive summary</div></div>
       </div>
       <pre><span class="cm"># graph.py — the whole workflow in ~20 lines</span>
 <span class="gr">graph</span>.add_edge(<span class="cy">"data"</span>, <span class="cy">"cost"</span>)        <span class="gr">graph</span>.add_edge(<span class="cy">"performance"</span>, <span class="cy">"rag"</span>)
 <span class="gr">graph</span>.add_edge(<span class="cy">"cost"</span>, <span class="cy">"capacity"</span>)     <span class="gr">graph</span>.add_edge(<span class="cy">"rag"</span>, <span class="cy">"recommendation"</span>)
 <span class="gr">graph</span>.add_edge(<span class="cy">"capacity"</span>, <span class="cy">"performance"</span>) <span class="gr">graph</span>.add_edge(<span class="cy">"recommendation"</span>, <span class="cy">"approval"</span>)
-<span class="gr">graph</span>.add_edge(<span class="cy">"approval"</span>, <span class="yl">END</span>)</pre>
+<span class="gr">graph</span>.add_edge(<span class="cy">"approval"</span>, <span class="cy">"summarize"</span>)   <span class="gr">graph</span>.add_edge(<span class="cy">"summarize"</span>, <span class="yl">END</span>)</pre>
     </div>
   </section>
 
@@ -247,16 +248,16 @@
   <section class="slide">
     <div class="inner">
       <div class="kicker">The Cast</div>
-      <h2>Meet the seven agents</h2>
+      <h2>Meet the eight nodes</h2>
       <div class="grid g4">
         <div class="card"><span class="ico">📄</span><h3>Data Agent</h3><p>Reads <code>cloud_cost.csv</code> + <code>resource_metrics.csv</code>, joins on <code>resource_id</code>.</p><span class="tag tc">foundation</span></div>
         <div class="card"><span class="ico">💰</span><h3>Cost Agent</h3><p>Flags spend above <b>mean + 1σ</b> and cost increases &gt; <b>30%</b>.</p><span class="tag tw">cost</span></div>
         <div class="card"><span class="ico">📦</span><h3>Capacity Agent</h3><p>Idle (CPU &lt; 10%), overloaded (&gt; 85%), storage growth &gt; 20%.</p><span class="tag tp">capacity</span></div>
         <div class="card"><span class="ico">⚡</span><h3>Performance Agent</h3><p>Latency &gt; 1000&nbsp;ms and availability &lt; 99.9%.</p><span class="tag tp">slo</span></div>
-        <div class="card"><span class="ico">📚</span><h3>RAG Agent</h3><p>Retrieves policy text for each issue via a pure-Python vector index.</p><span class="tag tc">knowledge</span></div>
-        <div class="card"><span class="ico">🎯</span><h3>Recommendation Agent</h3><p>Turns findings into actions with <b>savings estimates</b> + business impact.</p><span class="tag tg">value</span></div>
+        <div class="card"><span class="ico">📚</span><h3>RAG Agent</h3><p>Retrieves policy text via an in-memory index — OpenRouter embeddings or hashing fallback.</p><span class="tag tc">knowledge</span></div>
+        <div class="card"><span class="ico">🎯</span><h3>Recommendation Agent</h3><p>Turns findings into actions with <b>savings estimates</b> + LLM-drafted business impact.</p><span class="tag tg">value</span></div>
         <div class="card"><span class="ico">✅</span><h3>Approval Agent</h3><p>Mock approve/reject queue; only approved items form the final plan.</p><span class="tag tw">control</span></div>
-        <div class="card" style="display:flex;align-items:center;justify-content:center;text-align:center"><p style="font-size:.95rem;color:var(--ink)"><b>7 agents,<br>~zero shared state</b><br><span style="color:var(--muted)">each one is a small, readable Python class</span></p></div>
+        <div class="card"><span class="ico">📝</span><h3>Summarize Node</h3><p>Writes an executive summary of the run — LLM-authored when a key is set, template otherwise.</p><span class="tag tc">insight</span></div>
       </div>
     </div>
   </section>
@@ -288,6 +289,7 @@
     <div class="inner">
       <div class="kicker">It Works</div>
       <h2>Sample run over the mock fleet</h2>
+      <p class="sub">A real run over the 18-resource fleet surfaced <b>15 optimization opportunities</b> worth an estimated <b>$2,115/month</b>. A few of the findings:</p>
       <table>
         <thead><tr><th>Resource</th><th>Issue found</th><th>Recommended action</th><th>Est. savings</th></tr></thead>
         <tbody>
@@ -308,14 +310,14 @@
   <section class="slide">
     <div class="inner">
       <div class="kicker">RAG · Retrieval-Augmented Generation</div>
-      <h2>Grounded advice, <span class="grad">zero native dependencies</span></h2>
+      <h2>Grounded advice, <span class="grad">embeddings that just work</span></h2>
       <p class="sub">Recommendations are grounded in a policy knowledge base (<code>data/knowledge/*.txt</code>) — the agent retrieves the relevant clause before suggesting an action, then cites its source.</p>
       <div class="grid g3">
-        <div class="card"><span class="ico">🔤</span><h3>Hashing embedder</h3><p>256-dim bag-of-words vectors via a deterministic hash. No ML model, no training.</p></div>
-        <div class="card"><span class="ico">📏</span><h3>Cosine search</h3><p>Chunks are embedded once at startup; queries rank by 1 − cosine similarity.</p></div>
-        <div class="card"><span class="ico">🧱</span><h3>Pure Python</h3><p>std-lib only (<code>hashlib</code>, <code>math</code>, <code>re</code>). Nothing to install, nothing native.</p></div>
+        <div class="card"><span class="ico">🌐</span><h3>OpenRouter embeddings</h3><p>Real vectors from a hosted model when <code>OPENROUTER_API_KEY</code> is set in <code>.env</code>.</p></div>
+        <div class="card"><span class="ico">🔤</span><h3>Hashing fallback</h3><p>256-dim bag-of-words vectors via a deterministic hash. No ML model — works fully offline.</p></div>
+        <div class="card"><span class="ico">📏</span><h3>Cosine search</h3><p>Chunks are embedded once at startup into an in-memory index; queries rank by 1 − cosine similarity.</p></div>
       </div>
-      <div class="callout"><span class="ico">🔧</span><p><b>Resolved engineering challenge:</b> an earlier version used ChromaDB, whose native Rust/SQLite/ONNX backend crashed the process on some Windows setups. Replaced with a pure-Python in-memory vector index — the backend now starts reliably on any machine. (<code>chroma_db/</code> is no longer used.)</p></div>
+      <div class="callout"><span class="ico">🔧</span><p><b>Resolved engineering challenge:</b> an earlier version used ChromaDB, whose native Rust/SQLite/ONNX backend crashed the process on some Windows setups. Replaced with an in-memory vector index that stays dependency-free — it uses real OpenRouter embeddings when a key is present and a pure-Python hashing embedder otherwise. The backend now starts reliably on any machine. (<code>chroma_db/</code> is no longer used.)</p></div>
     </div>
   </section>
 
@@ -343,16 +345,18 @@
     <div class="inner">
       <div class="kicker">Tech Stack</div>
       <h2>Small, free, and beginner-friendly</h2>
-      <p class="sub">Seven Python dependencies — that's the whole stack. Everything runs on a laptop with Python 3.10+.</p>
+      <p class="sub">Nine Python dependencies — that's the whole stack. Everything runs on a laptop with Python 3.10+.</p>
       <div class="grid g4">
-        <div class="card"><span class="ico">🕸️</span><h3>LangGraph</h3><p>Orchestrates the 7-agent workflow graph.</p></div>
+        <div class="card"><span class="ico">🕸️</span><h3>LangGraph</h3><p>Orchestrates the 8-node workflow graph.</p></div>
         <div class="card"><span class="ico">⚡</span><h3>FastAPI + Uvicorn</h3><p>Lightning REST backend &amp; server.</p></div>
-        <div class="card"><span class="ico">📊</span><h3>Streamlit</h3><p>The whole UI — ~140 lines.</p></div>
+        <div class="card"><span class="ico">📊</span><h3>Streamlit</h3><p>The whole UI — ~190 lines.</p></div>
         <div class="card"><span class="ico">🐼</span><h3>Pandas</h3><p>CSV loading &amp; joins.</p></div>
         <div class="card"><span class="ico">✅</span><h3>Pydantic</h3><p>Request validation.</p></div>
         <div class="card"><span class="ico">🌐</span><h3>Requests</h3><p>UI ↔ API calls.</p></div>
+        <div class="card"><span class="ico">🛰️</span><h3>langchain-openai</h3><p>OpenAI-compatible client → OpenRouter (LLM + embeddings).</p></div>
+        <div class="card"><span class="ico">🔑</span><h3>python-dotenv</h3><p>Loads model &amp; key config from <code>.env</code>.</p></div>
       </div>
-      <div class="callout"><span class="ico">🚫</span><p>Deliberately <b>excluded</b>: cloud SDKs, a real database, authentication, Docker, and any native ML dependency — so the demo runs anywhere, instantly.</p></div>
+      <div class="callout"><span class="ico">🚫</span><p>Deliberately <b>excluded</b>: cloud SDKs, a real database, authentication, Docker, and any native ML dependency. The only external piece — the LLM API — is optional and opt-in via <code>.env</code>.</p></div>
     </div>
   </section>
 
@@ -365,11 +369,15 @@
 <span class="gr">uvicorn</span> <span class="cy">main:app</span> --reload        <span class="cm"># → http://localhost:8000/docs</span>
 
 <span class="cm"># Terminal 2 — UI</span>
-<span class="gr">streamlit</span> run <span class="cy">app.py</span>              <span class="cm"># → http://localhost:8501</span></pre>
+<span class="gr">streamlit</span> run <span class="cy">app.py</span>              <span class="cm"># → http://localhost:8501</span>
+
+<span class="cm"># Optional — enable LLM features (summary, chat, real embeddings)</span>
+<span class="gr">cp</span> <span class="cy">.env.example</span> <span class="cy">.env</span>  <span class="cm"># then set OPENROUTER_API_KEY</span></pre>
       <div class="grid g3">
-        <div class="card"><span class="ico">🏠</span><h3>Dashboard</h3><p>Run analysis → resources, opportunities &amp; total potential savings.</p></div>
+        <div class="card"><span class="ico">🏠</span><h3>Dashboard</h3><p>Run analysis → resources, opportunities, executive summary &amp; savings.</p></div>
         <div class="card"><span class="ico">🔎</span><h3>Recommendations</h3><p>Every issue, action, savings estimate &amp; business impact.</p></div>
         <div class="card"><span class="ico">✅</span><h3>Approval + Search</h3><p>Approve/reject items → action plan · free-text policy search.</p></div>
+        <div class="card"><span class="ico">💬</span><h3>Chat</h3><p>Ask cloud-optimization questions; off-topic questions are refused.</p></div>
       </div>
     </div>
   </section>
@@ -381,9 +389,9 @@
       <h2>What this capstone demonstrates</h2>
       <div class="grid g4">
         <div class="card"><span class="ico">🧩</span><h3>Real agentic pipeline</h3><p>End-to-end LangGraph workflow — not a single hardcoded answer.</p></div>
-        <div class="card"><span class="ico">📚</span><h3>Grounded RAG</h3><p>Real retrieval over policy docs with a dependency-free vector index.</p></div>
+        <div class="card"><span class="ico">📚</span><h3>Grounded RAG</h3><p>Real retrieval over policy docs — OpenRouter embeddings or hashing fallback.</p></div>
         <div class="card"><span class="ico">✋</span><h3>Safe automation</h3><p>Human approval gate between recommendation and action.</p></div>
-        <div class="card"><span class="ico">🖥️</span><h3>Runs anywhere</h3><p>Mock data, no cloud, no DB, no Docker — open it on any machine.</p></div>
+        <div class="card"><span class="ico">🖥️</span><h3>Runs anywhere</h3><p>Mock data, no DB, no Docker; LLM features optional — open it on any machine.</p></div>
       </div>
     </div>
   </section>
@@ -395,8 +403,8 @@
       <div class="big">Questions?</div>
       <p class="lede" style="margin:0 auto">CloudOptima AI — an agentic, human-approved path from cloud signal to savings.</p>
       <div class="stat-row" style="justify-content:center">
-        <div class="stat"><div class="v">7</div><div class="l">Agents</div></div>
-        <div class="stat"><div class="v">0</div><div class="l">External services</div></div>
+        <div class="stat"><div class="v">8</div><div class="l">Graph Nodes</div></div>
+        <div class="stat"><div class="v">1</div><div class="l">Optional LLM API</div></div>
         <div class="stat"><div class="v">∞</div><div class="l">Editable rules</div></div>
       </div>
     </div>

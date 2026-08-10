@@ -39,8 +39,9 @@ FastAPI (main.py)  <-- calls -->  Streamlit UI (app.py)
 ## Mock data
 
 The app runs entirely on hand-authored mock data in `data/` — no real cloud
-account, database, or API is ever contacted. Two CSV files hold the fleet, and
-four policy `.txt` files make up the RAG knowledge base.
+account or database is ever contacted. The only external API is the *optional*
+OpenRouter LLM (see below); without a key the app stays fully offline. Two CSV
+files hold the fleet, and four policy `.txt` files make up the RAG knowledge base.
 
 ### `data/cloud_cost.csv` — billing snapshot
 
