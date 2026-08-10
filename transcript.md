@@ -1,6 +1,6 @@
 # CloudOptima AI — Presentation Transcript
 
-Slide-by-slide speaking script for `presentation.html`. ~9–12 minutes at a natural pace.
+Slide-by-slide speaking script for `index.html`. ~9–12 minutes at a natural pace.
 Navigate slides with `→` / `←`.
 
 ---
