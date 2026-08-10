@@ -1,4 +1,4 @@
-# CloudOptima AI
+# [CloudOptima AI](https://anix9920.github.io/agentic-ai-aniket-capstone/)
 
 Cloud Cost, Performance & Capacity Optimization Agent — a beginner-friendly Agentic AI
 demo on mock CSV data. No database, no authentication, no Docker. Runs fully offline by
