@@ -15,7 +15,7 @@ def call_api(method: str, path: str, **kwargs):
             st.error(f"API error ({resp.status_code}): {resp.json().get('detail', resp.text)}")
             return None
         return resp.json()
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.RequestException:
         st.error("Cannot reach the backend. Start it with: uvicorn main:app --reload")
         return None
 
@@ -161,21 +161,26 @@ elif page == "Chat":
         st.session_state.messages = []
 
     def respond(text: str):
+        """Append a Q&A pair to the history and render it inline (so it shows immediately)."""
         st.session_state.messages.append({"role": "user", "content": text})
+        with st.chat_message("user"):
+            st.markdown(text)
         resp = call_api("POST", "/chat", json={"message": text})
         answer = resp["answer"] if resp else "Cannot reach the backend. Start it with: uvicorn main:app --reload"
         st.session_state.messages.append({"role": "assistant", "content": answer})
+        with st.chat_message("assistant"):
+            st.markdown(answer)
 
-    picked = st.pills("Sample questions", SAMPLE_QUESTIONS, selection_mode="single", key="sample_pill")
-    if picked:
-        respond(picked)
-        st.session_state.pop("sample_pill", None)
-        st.rerun()
-
+    # Render the conversation history from previous runs first.
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
+    # Stateless sample-question buttons (clicking one just sends that question once).
+    with st.expander("Try a sample question", expanded=not st.session_state.messages):
+        for q in SAMPLE_QUESTIONS:
+            if st.button(q, key=f"sample_{q}"):
+                respond(q)
+
     if prompt := st.chat_input("Ask about cloud optimization..."):
         respond(prompt)
-        st.rerun()
